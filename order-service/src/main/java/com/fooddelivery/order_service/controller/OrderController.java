@@ -1,22 +1,34 @@
 package com.fooddelivery.order_service.controller;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.fooddelivery.order_service.client.UserClient;
+import com.fooddelivery.order_service.dto.ApiResponse;
+import com.fooddelivery.order_service.dto.OrderRequestDTO;
+import com.fooddelivery.order_service.dto.OrderResponseDTO;
+import com.fooddelivery.order_service.service.OrderService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final UserClient userClient;
+    private final OrderService orderService;
 
-    @GetMapping("/test")
-    public String testOrder() {
+    @PostMapping
+    public ResponseEntity<ApiResponse<OrderResponseDTO>> createOrder(@RequestBody OrderRequestDTO requestDTO) {
 
-        String response = userClient.getUserTest();
+        OrderResponseDTO order = orderService.createOrder(requestDTO);
 
-        return "Order Service -> " + response;
+        ApiResponse<OrderResponseDTO> response = ApiResponse.<OrderResponseDTO>builder()
+                .success(true)
+                .message("Order created successfully")
+                .data(order)
+                .build();
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 }

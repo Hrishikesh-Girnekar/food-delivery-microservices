@@ -1,30 +1,59 @@
 package com.fooddelivery.user_service.controller;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.fooddelivery.user_service.dto.ApiResponse;
+import com.fooddelivery.user_service.dto.UserRequestDTO;
+import com.fooddelivery.user_service.dto.UserResponseDTO;
+import com.fooddelivery.user_service.service.UserService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    @GetMapping("/{id}")
-    public Map<String, Object> getUser(@PathVariable("id") Long id) {
+    private final UserService userService;
 
-        Map<String, Object> user = new HashMap<>();
-        user.put("id", id);
-        user.put("name", "Hrishikesh");
-        user.put("email", "hrishikesh@example.com");
+    @PostMapping
+    public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserRequestDTO requestDTO) {
 
-        return user;
+        UserResponseDTO response = userService.createUser(requestDTO);
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
     
-    @GetMapping("/test")
-    public String test() {
-        return "User service working";
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getUserById(@PathVariable Long id) {
+
+        UserResponseDTO user = userService.getUserById(id);
+
+        ApiResponse<UserResponseDTO> response = ApiResponse.<UserResponseDTO>builder()
+                .success(true)
+                .message("User fetched successfully")
+                .data(user)
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAllUsers() {
+
+        List<UserResponseDTO> users = userService.getAllUsers();
+
+        ApiResponse<List<UserResponseDTO>> response =
+                ApiResponse.<List<UserResponseDTO>>builder()
+                        .success(true)
+                        .message("Users fetched successfully")
+                        .data(users)
+                        .build();
+
+        return ResponseEntity.ok(response);
     }
 }
