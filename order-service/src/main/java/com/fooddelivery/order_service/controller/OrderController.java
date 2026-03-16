@@ -1,5 +1,7 @@
 package com.fooddelivery.order_service.controller;
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,19 +18,53 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OrderController {
 
-    private final OrderService orderService;
+	private final OrderService orderService;
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<OrderResponseDTO>> createOrder(@RequestBody OrderRequestDTO requestDTO) {
+	@PostMapping
+	public ResponseEntity<ApiResponse<OrderResponseDTO>> createOrder(@RequestBody OrderRequestDTO requestDTO) {
 
-        OrderResponseDTO order = orderService.createOrder(requestDTO);
+		OrderResponseDTO order = orderService.createOrder(requestDTO);
 
-        ApiResponse<OrderResponseDTO> response = ApiResponse.<OrderResponseDTO>builder()
-                .success(true)
-                .message("Order created successfully")
-                .data(order)
-                .build();
+		ApiResponse<OrderResponseDTO> response = ApiResponse.<OrderResponseDTO>builder().success(true)
+				.message("Order created successfully").data(order).build();
 
-        return new ResponseEntity<>(response, HttpStatus.CREATED);
-    }
+		return new ResponseEntity<>(response, HttpStatus.CREATED);
+	}
+
+	@GetMapping("/{id}")
+	public ResponseEntity<ApiResponse<OrderResponseDTO>> getOrderById(@PathVariable Long id) {
+
+		OrderResponseDTO order = orderService.getOrderById(id);
+
+		ApiResponse<OrderResponseDTO> response = ApiResponse.<OrderResponseDTO>builder().success(true)
+				.message("Order fetched successfully").data(order).build();
+
+		return ResponseEntity.ok(response);
+	}
+
+	@GetMapping
+	public ResponseEntity<ApiResponse<List<OrderResponseDTO>>> getAllOrders() {
+
+		List<OrderResponseDTO> orders = orderService.getAllOrders();
+
+		ApiResponse<List<OrderResponseDTO>> response = ApiResponse.<List<OrderResponseDTO>>builder().success(true)
+				.message("Orders fetched successfully").data(orders).build();
+
+		return ResponseEntity.ok(response);
+	}
+	
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<ApiResponse<List<OrderResponseDTO>>> getOrdersByUserId(@PathVariable Long userId) {
+
+	    List<OrderResponseDTO> orders = orderService.getOrdersByUserId(userId);
+
+	    ApiResponse<List<OrderResponseDTO>> response =
+	            ApiResponse.<List<OrderResponseDTO>>builder()
+	                    .success(true)
+	                    .message("Orders fetched successfully for user")
+	                    .data(orders)
+	                    .build();
+
+	    return ResponseEntity.ok(response);
+	}
 }
