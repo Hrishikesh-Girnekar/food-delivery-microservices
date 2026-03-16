@@ -8,6 +8,7 @@ import com.fooddelivery.order_service.client.UserServiceClient;
 import com.fooddelivery.order_service.dto.ApiResponse;
 import com.fooddelivery.order_service.dto.OrderRequestDTO;
 import com.fooddelivery.order_service.dto.OrderResponseDTO;
+import com.fooddelivery.order_service.dto.UpdateOrderStatusRequestDTO;
 import com.fooddelivery.order_service.dto.UserResponseDTO;
 import com.fooddelivery.order_service.entity.Order;
 import com.fooddelivery.order_service.enums.OrderStatus;
@@ -74,5 +75,18 @@ public class OrderServiceImpl implements OrderService {
         List<Order> orders = orderRepository.findByUserId(userId);
 
         return orderMapper.toResponseDtoList(orders);
+    }
+    
+    @Override
+    public OrderResponseDTO updateOrderStatus(Long id, UpdateOrderStatusRequestDTO requestDTO) {
+
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
+
+        order.setStatus(requestDTO.getStatus());
+
+        Order updatedOrder = orderRepository.save(order);
+
+        return orderMapper.toResponseDto(updatedOrder);
     }
 }

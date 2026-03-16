@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import com.fooddelivery.order_service.dto.ApiResponse;
 import com.fooddelivery.order_service.dto.OrderRequestDTO;
 import com.fooddelivery.order_service.dto.OrderResponseDTO;
+import com.fooddelivery.order_service.dto.UpdateOrderStatusRequestDTO;
 import com.fooddelivery.order_service.service.OrderService;
 
 import lombok.RequiredArgsConstructor;
@@ -63,6 +64,23 @@ public class OrderController {
 	                    .success(true)
 	                    .message("Orders fetched successfully for user")
 	                    .data(orders)
+	                    .build();
+
+	    return ResponseEntity.ok(response);
+	}
+	
+	@PutMapping("/{id}/status")
+	public ResponseEntity<ApiResponse<OrderResponseDTO>> updateOrderStatus(
+	        @PathVariable Long id,
+	        @RequestBody UpdateOrderStatusRequestDTO requestDTO) {
+
+	    OrderResponseDTO order = orderService.updateOrderStatus(id, requestDTO);
+
+	    ApiResponse<OrderResponseDTO> response =
+	            ApiResponse.<OrderResponseDTO>builder()
+	                    .success(true)
+	                    .message("Order status updated successfully")
+	                    .data(order)
 	                    .build();
 
 	    return ResponseEntity.ok(response);

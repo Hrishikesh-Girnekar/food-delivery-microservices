@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.fooddelivery.order_service.dto.OrderRequestDTO;
 import com.fooddelivery.order_service.dto.OrderResponseDTO;
+import com.fooddelivery.order_service.dto.UpdateOrderStatusRequestDTO;
 
 public interface OrderService {
 
@@ -16,5 +17,7 @@ public interface OrderService {
     List<OrderResponseDTO> getAllOrders();
     
     List<OrderResponseDTO> getOrdersByUserId(Long userId);
+    
+    OrderResponseDTO updateOrderStatus(Long id, UpdateOrderStatusRequestDTO requestDTO);
     
 }
