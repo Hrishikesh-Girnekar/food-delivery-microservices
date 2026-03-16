@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.fooddelivery.order_service.client.UserServiceClient;
 import com.fooddelivery.order_service.dto.ApiResponse;
+import com.fooddelivery.order_service.dto.OrderDetailsResponseDTO;
 import com.fooddelivery.order_service.dto.OrderRequestDTO;
 import com.fooddelivery.order_service.dto.OrderResponseDTO;
 import com.fooddelivery.order_service.dto.UpdateOrderStatusRequestDTO;
@@ -88,5 +89,27 @@ public class OrderServiceImpl implements OrderService {
         Order updatedOrder = orderRepository.save(order);
 
         return orderMapper.toResponseDto(updatedOrder);
+    }
+    
+    @Override
+    public OrderDetailsResponseDTO getOrderDetails(Long orderId) {
+
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
+
+        ApiResponse<UserResponseDTO> userResponse;
+
+        try {
+            userResponse = userServiceClient.getUserById(order.getUserId());
+        } catch (Exception ex) {
+            throw new RuntimeException("Unable to fetch user details");
+        }
+
+        OrderResponseDTO orderDTO = orderMapper.toResponseDto(order);
+
+        return OrderDetailsResponseDTO.builder()
+                .order(orderDTO)
+                .user(userResponse.getData())
+                .build();
     }
 }

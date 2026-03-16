@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.fooddelivery.order_service.dto.ApiResponse;
+import com.fooddelivery.order_service.dto.OrderDetailsResponseDTO;
 import com.fooddelivery.order_service.dto.OrderRequestDTO;
 import com.fooddelivery.order_service.dto.OrderResponseDTO;
 import com.fooddelivery.order_service.dto.UpdateOrderStatusRequestDTO;
@@ -81,6 +82,21 @@ public class OrderController {
 	                    .success(true)
 	                    .message("Order status updated successfully")
 	                    .data(order)
+	                    .build();
+
+	    return ResponseEntity.ok(response);
+	}
+	
+	@GetMapping("/{id}/details")
+	public ResponseEntity<ApiResponse<OrderDetailsResponseDTO>> getOrderDetails(@PathVariable Long id) {
+
+	    OrderDetailsResponseDTO details = orderService.getOrderDetails(id);
+
+	    ApiResponse<OrderDetailsResponseDTO> response =
+	            ApiResponse.<OrderDetailsResponseDTO>builder()
+	                    .success(true)
+	                    .message("Order details fetched successfully")
+	                    .data(details)
 	                    .build();
 
 	    return ResponseEntity.ok(response);
