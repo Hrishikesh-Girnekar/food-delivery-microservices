@@ -18,98 +18,112 @@ import com.fooddelivery.order_service.mapper.OrderMapper;
 import com.fooddelivery.order_service.repository.OrderRepository;
 import com.fooddelivery.order_service.service.OrderService;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    private final OrderRepository orderRepository;
-    private final UserServiceClient userServiceClient;
-    private final OrderMapper orderMapper;
+	private final OrderRepository orderRepository;
+	private final UserServiceClient userServiceClient;
+	private final OrderMapper orderMapper;
 
-    @Override
-    public OrderResponseDTO createOrder(OrderRequestDTO requestDTO) {
+	@Override
+	@CircuitBreaker(name = "userService", fallbackMethod = "userServiceFallback")
+	public OrderResponseDTO createOrder(OrderRequestDTO requestDTO) {
 
-        ApiResponse<UserResponseDTO> userResponse;
+		ApiResponse<UserResponseDTO> userResponse;
 
-        try {
-            userResponse = userServiceClient.getUserById(requestDTO.getUserId());
-        } catch (Exception ex) {
-            throw new RuntimeException("User not found. Cannot create order.");
-        }
+		try {
+			userResponse = userServiceClient.getUserById(requestDTO.getUserId());
+		} catch (Exception ex) {
+			throw new RuntimeException("User not found. Cannot create order.");
+		}
 
-        if (!userResponse.isSuccess() || userResponse.getData() == null) {
-            throw new RuntimeException("User not found. Cannot create order.");
-        }
+		if (!userResponse.isSuccess() || userResponse.getData() == null) {
+			throw new RuntimeException("User not found. Cannot create order.");
+		}
 
-        Order order = orderMapper.toEntity(requestDTO);
+		Order order = orderMapper.toEntity(requestDTO);
 
-        // business logic
-        order.setStatus(OrderStatus.CREATED);
+		// business logic
+		order.setStatus(OrderStatus.CREATED);
 
-        Order savedOrder = orderRepository.save(order);
+		Order savedOrder = orderRepository.save(order);
 
-        return orderMapper.toResponseDto(savedOrder);
-    }
+		return orderMapper.toResponseDto(savedOrder);
+	}
 
-    @Override
-    public OrderResponseDTO getOrderById(Long id) {
+	public OrderResponseDTO userServiceFallback(OrderRequestDTO requestDTO, Throwable throwable) {
 
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
+		throw new RuntimeException("User service is currently unavailable. Please try again later.");
+	}
 
-        return orderMapper.toResponseDto(order);
-    }
+	@Override
+	public OrderResponseDTO getOrderById(Long id) {
 
-    @Override
-    public List<OrderResponseDTO> getAllOrders() {
+		Order order = orderRepository.findById(id)
+				.orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
 
-        List<Order> orders = orderRepository.findAll();
+		return orderMapper.toResponseDto(order);
+	}
 
-        return orderMapper.toResponseDtoList(orders);
-    }
+	@Override
+	public List<OrderResponseDTO> getAllOrders() {
 
-    @Override
-    public List<OrderResponseDTO> getOrdersByUserId(Long userId) {
+		List<Order> orders = orderRepository.findAll();
 
-        List<Order> orders = orderRepository.findByUserId(userId);
+		return orderMapper.toResponseDtoList(orders);
+	}
 
-        return orderMapper.toResponseDtoList(orders);
-    }
-    
-    @Override
-    public OrderResponseDTO updateOrderStatus(Long id, UpdateOrderStatusRequestDTO requestDTO) {
+	@Override
+	public List<OrderResponseDTO> getOrdersByUserId(Long userId) {
 
-        Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
+		List<Order> orders = orderRepository.findByUserId(userId);
 
-        order.setStatus(requestDTO.getStatus());
+		return orderMapper.toResponseDtoList(orders);
+	}
 
-        Order updatedOrder = orderRepository.save(order);
+	@Override
+	public OrderResponseDTO updateOrderStatus(Long id, UpdateOrderStatusRequestDTO requestDTO) {
 
-        return orderMapper.toResponseDto(updatedOrder);
-    }
-    
-    @Override
-    public OrderDetailsResponseDTO getOrderDetails(Long orderId) {
+		Order order = orderRepository.findById(id)
+				.orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + id));
 
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
+		order.setStatus(requestDTO.getStatus());
 
-        ApiResponse<UserResponseDTO> userResponse;
+		Order updatedOrder = orderRepository.save(order);
 
-        try {
-            userResponse = userServiceClient.getUserById(order.getUserId());
-        } catch (Exception ex) {
-            throw new RuntimeException("Unable to fetch user details");
-        }
+		return orderMapper.toResponseDto(updatedOrder);
+	}
 
-        OrderResponseDTO orderDTO = orderMapper.toResponseDto(order);
+	@Override
+	@CircuitBreaker(name = "userService", fallbackMethod = "orderDetailsFallback")
+	public OrderDetailsResponseDTO getOrderDetails(Long orderId) {
 
-        return OrderDetailsResponseDTO.builder()
-                .order(orderDTO)
-                .user(userResponse.getData())
-                .build();
-    }
+		Order order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
+
+		ApiResponse<UserResponseDTO> userResponse;
+
+		try {
+			userResponse = userServiceClient.getUserById(order.getUserId());
+		} catch (Exception ex) {
+			throw new RuntimeException("Unable to fetch user details");
+		}
+
+		OrderResponseDTO orderDTO = orderMapper.toResponseDto(order);
+
+		return OrderDetailsResponseDTO.builder().order(orderDTO).user(userResponse.getData()).build();
+	}
+
+	public OrderDetailsResponseDTO orderDetailsFallback(Long orderId, Throwable throwable) {
+
+		Order order = orderRepository.findById(orderId)
+				.orElseThrow(() -> new OrderNotFoundException("Order not found with id: " + orderId));
+
+		return OrderDetailsResponseDTO.builder().order(orderMapper.toResponseDto(order)).user(null) // user data unavailable
+				.build();
+	}
 }
